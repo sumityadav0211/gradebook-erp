@@ -707,57 +707,100 @@ const Students: React.FC = () => {
                       <div className="space-y-6">
                         {(Object.entries(groupedSubjects) as [string, BatchSubject[]][]).map(([groupCode, groupSubs]) => (
                           <div key={groupCode} className="p-5 bg-amber-50/50 rounded-2xl border border-amber-100/50">
-                            <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest block mb-3 px-1">
-                              Group: {groupCode}
-                            </label>
+                            <div className="flex items-center justify-between mb-3 px-1">
+                              <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                                Group: {groupCode}
+                              </label>
+                              <span className="text-[9px] font-bold text-amber-500 uppercase bg-amber-100/60 px-2 py-0.5 rounded-full">
+                                {groupSubs.length > 2 ? 'Select up to 2 subjects' : 'Select 1 subject'}
+                              </span>
+                            </div>
                             <div className="grid grid-cols-1 gap-2">
-                              {groupSubs.map(sub => (
-                                <button
-                                  key={sub.id}
-                                  type="button"
-                                  onClick={() => {
-                                    const currentPref = formData.subject_preferences[groupCode];
-                                    const newPrefs = { ...formData.subject_preferences };
-                                    
-                                    if (currentPref === sub.id) {
-                                      delete newPrefs[groupCode];
-                                    } else {
-                                      newPrefs[groupCode] = sub.id;
-                                    }
-                                    
-                                    setFormData({
-                                      ...formData,
-                                      subject_preferences: newPrefs
-                                    });
-                                  }}
-                                  className={`flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
-                                    formData.subject_preferences[groupCode] === sub.id
-                                      ? 'bg-amber-100 border-amber-300 text-amber-900 shadow-sm'
-                                      : 'bg-white border-slate-100 text-slate-600 hover:border-amber-200'
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
-                                      formData.subject_preferences[groupCode] === sub.id
-                                        ? 'border-amber-500 bg-white'
-                                        : 'border-slate-200'
-                                    }`}>
-                                      {formData.subject_preferences[groupCode] === sub.id && (
-                                        <div className="w-2 h-2 rounded-full bg-amber-500" />
-                                      )}
+                              {groupSubs.map(sub => {
+                                const isSelected = (() => {
+                                  const pref = formData.subject_preferences[groupCode];
+                                  if (!pref) return false;
+                                  if (Array.isArray(pref)) return pref.includes(sub.id);
+                                  if (typeof pref === 'string') {
+                                    return pref.split(',').map(s => s.trim()).includes(sub.id);
+                                  }
+                                  return false;
+                                })();
+
+                                return (
+                                  <button
+                                    key={sub.id}
+                                    type="button"
+                                    onClick={() => {
+                                      const currentPref = formData.subject_preferences[groupCode];
+                                      const newPrefs = { ...formData.subject_preferences };
+                                      
+                                      let currentChoices: string[] = [];
+                                      if (currentPref) {
+                                        if (Array.isArray(currentPref)) {
+                                          currentChoices = [...currentPref];
+                                        } else if (typeof currentPref === 'string') {
+                                          currentChoices = currentPref.split(',').map(s => s.trim()).filter(Boolean);
+                                        }
+                                      }
+                                      
+                                      const maxAllowed = groupSubs.length > 2 ? 2 : 1;
+                                      
+                                      if (currentChoices.includes(sub.id)) {
+                                        currentChoices = currentChoices.filter(id => id !== sub.id);
+                                      } else {
+                                        if (maxAllowed === 1) {
+                                          currentChoices = [sub.id];
+                                        } else {
+                                          if (currentChoices.length < maxAllowed) {
+                                            currentChoices.push(sub.id);
+                                          } else {
+                                            toast.error(`You can select at most ${maxAllowed} subjects for this group`);
+                                            return;
+                                          }
+                                        }
+                                      }
+                                      
+                                      if (currentChoices.length === 0) {
+                                        delete newPrefs[groupCode];
+                                      } else {
+                                        newPrefs[groupCode] = currentChoices;
+                                      }
+                                      
+                                      setFormData({
+                                        ...formData,
+                                        subject_preferences: newPrefs
+                                      });
+                                    }}
+                                    className={`flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
+                                      isSelected
+                                        ? 'bg-amber-100 border-amber-300 text-amber-900 shadow-sm'
+                                        : 'bg-white border-slate-100 text-slate-600 hover:border-amber-200'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                                        isSelected
+                                          ? 'border-amber-500 bg-white'
+                                          : 'border-slate-200'
+                                      }`}>
+                                        {isSelected && (
+                                          <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <p className="text-xs font-bold leading-none mb-1 uppercase">{sub.subject_name}</p>
+                                        <p className="text-[9px] font-mono font-bold text-slate-400">{sub.subject_code}</p>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <p className="text-xs font-bold leading-none mb-1 uppercase">{sub.subject_name}</p>
-                                      <p className="text-[9px] font-mono font-bold text-slate-400">{sub.subject_code}</p>
-                                    </div>
-                                  </div>
-                                  {formData.subject_preferences[groupCode] === sub.id && (
-                                    <div className="px-2 py-0.5 bg-amber-200 text-amber-700 rounded text-[8px] font-black uppercase tracking-widest">
-                                      Chosen
-                                    </div>
-                                  )}
-                                </button>
-                              ))}
+                                    {isSelected && (
+                                      <div className="px-2 py-0.5 bg-amber-200 text-amber-700 rounded text-[8px] font-black uppercase tracking-widest">
+                                        Chosen
+                                      </div>
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         ))}
