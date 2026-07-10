@@ -148,13 +148,28 @@ const StudentResult: React.FC = () => {
       // Filter groups based on preference
       const filteredGroupSubjects: Subject[] = [];
       Object.entries(groupedSubjects).forEach(([group, groupSubjects]) => {
-        if (preferences[group]) {
-          const preferred = groupSubjects.find(s => s.id === preferences[group]);
-          if (preferred) {
-            filteredGroupSubjects.push(preferred);
+        const prefVal = preferences[group];
+        if (prefVal) {
+          let chosenIds: string[] = [];
+          if (Array.isArray(prefVal)) {
+            chosenIds = prefVal;
+          } else if (typeof prefVal === 'string') {
+            chosenIds = prefVal.split(',').map(s => s.trim()).filter(Boolean);
+          }
+          
+          if (chosenIds.length > 0) {
+            const preferred = groupSubjects.filter(s => chosenIds.includes(s.id));
+            if (preferred.length > 0) {
+              filteredGroupSubjects.push(...preferred);
+            } else {
+              // Priority mismatch, show all as fallback
+              filteredGroupSubjects.push(...groupSubjects);
+            }
           } else {
-            // Priority mismatch, show all as fallback
-            filteredGroupSubjects.push(...groupSubjects);
+            foundWarning = true;
+            groupSubjects.forEach(s => {
+              filteredGroupSubjects.push({ ...s, noPreference: true });
+            });
           }
         } else {
           // No preference set, show all with warning flag
