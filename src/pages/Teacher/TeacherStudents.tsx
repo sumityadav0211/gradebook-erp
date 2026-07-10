@@ -179,7 +179,17 @@ const TeacherStudents: React.FC = () => {
         if (!sub.subject_group) return true;
         const preferredId = preferences[sub.subject_group];
         if (!preferredId) return true;
-        return sub.id === preferredId;
+        
+        if (Array.isArray(preferredId)) {
+          return preferredId.includes(sub.id);
+        }
+        if (typeof preferredId === 'string') {
+          if (preferredId.includes(',')) {
+            return preferredId.split(',').map(s => s.trim()).includes(sub.id);
+          }
+          return sub.id === preferredId;
+        }
+        return false;
       });
 
       setSubjects(formattedSubjects);
