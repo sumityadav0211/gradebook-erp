@@ -109,7 +109,19 @@ export async function prepareCombinedPDFData({
     // Filter by student preference if group exists
     if (subject.subject_group) {
         const preferredId = preferences[subject.subject_group];
-        if (preferredId && preferredId !== subject.id) return null;
+        if (preferredId) {
+            let isSelected = false;
+            if (Array.isArray(preferredId)) {
+                isSelected = preferredId.includes(subject.id);
+            } else if (typeof preferredId === 'string') {
+                if (preferredId.includes(',')) {
+                    isSelected = preferredId.split(',').map(s => s.trim()).includes(subject.id);
+                } else {
+                    isSelected = preferredId === subject.id;
+                }
+            }
+            if (!isSelected) return null;
+        }
     }
 
     const isGraded = subject.is_graded || subject.subject_name.toLowerCase().includes('sport');
