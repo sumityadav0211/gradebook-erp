@@ -402,9 +402,21 @@ const ResultReport: React.FC = () => {
             // Check if student takes this subject
             if (sub.group) {
               const preferredId = preferences[sub.group];
-              if (preferredId && preferredId !== sub.id) {
-                subjectAggregates[sub.id] = null; // Not taken
-                return;
+              if (preferredId) {
+                let isSelected = false;
+                if (Array.isArray(preferredId)) {
+                  isSelected = preferredId.includes(sub.id);
+                } else if (typeof preferredId === 'string') {
+                  if (preferredId.includes(',')) {
+                    isSelected = preferredId.split(',').map(s => s.trim()).includes(sub.id);
+                  } else {
+                    isSelected = preferredId === sub.id;
+                  }
+                }
+                if (!isSelected) {
+                  subjectAggregates[sub.id] = null; // Not taken
+                  return;
+                }
               }
             }
 
@@ -497,9 +509,21 @@ const ResultReport: React.FC = () => {
             const isAlternative = subData?.subject_group;
             if (isAlternative) {
               const pref = preferences[subData.subject_group];
-              if (pref && pref !== sub.subject_id) {
-                studentMarks[sub.subject_id] = '-'; // Explicitly not taken
-                return;
+              if (pref) {
+                let isSelected = false;
+                if (Array.isArray(pref)) {
+                  isSelected = pref.includes(sub.subject_id);
+                } else if (typeof pref === 'string') {
+                  if (pref.includes(',')) {
+                    isSelected = pref.split(',').map(s => s.trim()).includes(sub.subject_id);
+                  } else {
+                    isSelected = pref === sub.subject_id;
+                  }
+                }
+                if (!isSelected) {
+                  studentMarks[sub.subject_id] = '-'; // Explicitly not taken
+                  return;
+                }
               }
             }
 
